@@ -3,6 +3,13 @@
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
+const TEAM_NAMES: Record<string, string> = {
+  jihaad: "Jihaad",
+  adal: "Adal",
+  yakeen: "Yakeen",
+  sabar: "Sabar"
+};
+
 const TEAM_COLORS: Record<string, string> = {
   jihaad: "bg-red-600",
   adal: "bg-blue-600",
@@ -18,32 +25,66 @@ export default function TeamPage() {
   const [started, setStarted] = useState(false);
   const [code, setCode] = useState<string[]>([]);
   const [startTime, setStartTime] = useState<number | null>(null);
-  const [result, setResult] = useState<"win" | "lose" | null>(null);
-  const [alreadyWonPopup, setAlreadyWonPopup] = useState(false);
+  const [result, setResult] = useState<"win" | "lose" | "alreadyWon" | null>(null);
   const [alreadyWon, setAlreadyWon] = useState(false);
   const [attemptsLeft, setAttemptsLeft] = useState(1);
+  const [winningTeam, setWinningTeam] = useState<string | null>(null);
 
   const headerColor = TEAM_COLORS[teamId] || "bg-black";
   const startButtonTextColor = teamId === "sabar" ? "text-black" : "text-white";
   const keypadDisabled = attemptsLeft === 0 || alreadyWon || result === "win";
 
-  const teamName = teamId;
-  const teamLabel = teamName
-    ? `${teamName.charAt(0).toUpperCase()}${teamName.slice(1)}`
-    : "Team";
+  const teamName = TEAM_NAMES[teamId] || teamId;
+  const teamLabel = teamName;
+  
+  const getTeamName = (id: string | null) => {
+    if (!id) return 'Another team';
+    return TEAM_NAMES[id] || id.charAt(0).toUpperCase() + id.slice(1);
+  };
 
   const refreshTeam = async () => {
     if (!teamId) return;
-    const res = await fetch(`/api/team/${teamId}`, { cache: "no-store" });
-    const data = await res.json();
-    if (!data?.ok) return;
+    try {
+      const [teamRes, adminRes] = await Promise.all([
+        fetch(`/api/team/${teamId}`, { cache: "no-store" }),
+        fetch('/api/admin', { cache: "no-store" })
+      ]);
+      
+      const teamData = await teamRes.json();
+      const adminData = await adminRes.json();
+      
+      if (!teamData?.ok || !adminData?.teams) return;
 
-    const t = data.team;
-    if (typeof t?.attemptsLeft === "number") {
-      setAttemptsLeft(t.attemptsLeft);
+      const t = teamData.team;
+      if (typeof t?.attemptsLeft === "number") {
+        setAttemptsLeft(t.attemptsLeft);
+      }
+
+      // Find the winning team if any
+      const winningTeamEntry = Object.entries(adminData.teams).find(
+        ([_, team]: [string, any]) => team.completed
+      );
+      
+      if (winningTeamEntry) {
+        const [winningTeamId] = winningTeamEntry;
+        // Get the winning team's display name from the admin data if available
+        const winningTeamName = adminData.teams[winningTeamId]?.teamName || 
+                              TEAM_NAMES[winningTeamId] || 
+                              winningTeamId;
+        
+        setWinningTeam(winningTeamName);
+        setAlreadyWon(true);
+        
+        // If the current team is not the winner, show the already won state
+        if (winningTeamId !== teamId) {
+          setResult("alreadyWon");
+        }
+      } else {
+        setAlreadyWon(Boolean(t?.completed));
+      }
+    } catch (error) {
+      console.error("Error refreshing team data:", error);
     }
-
-    setAlreadyWon(Boolean(t?.completed));
   };
 
   useEffect(() => {
@@ -84,21 +125,23 @@ export default function TeamPage() {
 
     const data = await res.json();
 
+    if (data.winningTeam) {
+      setWinningTeam(data.winningTeam);
+    }
+
     if (typeof data?.attemptsLeft === "number") {
       setAttemptsLeft(data.attemptsLeft);
     }
 
     if (data.alreadyWon) {
-      setAlreadyWonPopup(true);
       setAlreadyWon(true);
-      setResult("win");
+      setResult(data.winningTeam === teamId ? "win" : "alreadyWon");
       return;
     }
 
     setResult(data.success ? "win" : "lose");
 
     if (data.success) {
-      setAlreadyWonPopup(false);
       setAlreadyWon(true);
     }
 
@@ -109,7 +152,6 @@ export default function TeamPage() {
 
   const closePopup = () => {
     setResult(null);
-    setAlreadyWonPopup(false);
   };
 
   return (
@@ -145,7 +187,7 @@ export default function TeamPage() {
               Attempts left: {attemptsLeft}
             </p>
 
-            {alreadyWon && (
+            {alreadyWon && winningTeam === teamId && (
               <p className="text-green-600 font-bold text-lg">
                 🏆 You have already won the game
               </p>
@@ -230,35 +272,66 @@ export default function TeamPage() {
         )}
       </main>
 
-      {/* WIN/LOSE POPUP */}
+      {/* WIN/LOSE/ALREADY WON POPUP */}
       {result && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
           <div className="bg-white p-8 rounded-xl max-w-sm w-full mx-4 shadow-2xl transform transition-all">
             <div className="text-center space-y-4">
-              <div className="text-6xl mb-4">
-                {result === "win" ? "🎉" : "❌"}
-              </div>
-              <h2 className="text-3xl font-extrabold text-gray-900">
-                {result === "win" 
-                  ? `Team ${teamLabel} Wins!` 
-                  : "Try Again!"}
-              </h2>
-              <p className="text-lg text-gray-700">
-                {result === "win"
-                  ? `Congratulations Team ${teamLabel}! You've found the treasure!`
-                  : attemptsLeft > 0 
-                    ? `Incorrect code. ${attemptsLeft} ${attemptsLeft === 1 ? 'attempt' : 'attempts'} left.`
-                    : "No attempts left!"}
-              </p>
-              <button
-                onClick={closePopup}
-                className={`w-full mt-6 py-4 px-6 rounded-xl font-bold text-lg transition-colors
-                  ${result === "win" 
-                    ? 'bg-green-600 hover:bg-green-700 text-white' 
-                    : 'bg-blue-600 hover:bg-blue-700 text-white'}`}
-              >
-                {result === "win" ? 'Awesome!' : 'Try Again'}
-              </button>
+              {result === "win" && (
+                <>
+                  <div className="text-6xl mb-4">🎉</div>
+                  <h2 className="text-3xl font-extrabold text-gray-900">
+                    {teamName} Wins!
+                  </h2>
+                  <p className="text-lg text-gray-700">
+                    Congratulations {teamName}! You've found the treasure!
+                  </p>
+                  <button
+                    onClick={closePopup}
+                    className="w-full mt-6 py-4 px-6 rounded-xl font-bold text-lg bg-green-600 hover:bg-green-700 text-white transition-colors"
+                  >
+                    Awesome!
+                  </button>
+                </>
+              )}
+              
+              {result === "alreadyWon" && (
+                <>
+                  <div className="text-6xl mb-4">🏆</div>
+                  <h2 className="text-3xl font-extrabold text-gray-900">
+                    Game Over!
+                  </h2>
+                  <p className="text-lg text-gray-700">
+                    {getTeamName(winningTeam)} has already won the game!
+                  </p>
+                  <button
+                    onClick={closePopup}
+                    className="w-full mt-6 py-4 px-6 rounded-xl font-bold text-lg bg-purple-600 hover:bg-purple-700 text-white transition-colors"
+                  >
+                    Got it
+                  </button>
+                </>
+              )}
+              
+              {result === "lose" && (
+                <>
+                  <div className="text-6xl mb-4">❌</div>
+                  <h2 className="text-3xl font-extrabold text-gray-900">
+                    Try Again!
+                  </h2>
+                  <p className="text-lg text-gray-700">
+                    {attemptsLeft > 0 
+                      ? `Incorrect code. ${attemptsLeft} ${attemptsLeft === 1 ? 'attempt' : 'attempts'} left.`
+                      : "No attempts left!"}
+                  </p>
+                  <button
+                    onClick={closePopup}
+                    className="w-full mt-6 py-4 px-6 rounded-xl font-bold text-lg bg-blue-600 hover:bg-blue-700 text-white transition-colors"
+                  >
+                    {attemptsLeft > 0 ? 'Try Again' : 'Okay'}
+                  </button>
+                </>
+              )}
             </div>
           </div>
         </div>

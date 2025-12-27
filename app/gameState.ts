@@ -45,9 +45,22 @@ const createInitialTeams = (): Record<TeamId, TeamState> => ({
 });
 
 const GLOBAL_KEY = "__TREASURE_HUNT_TEAMS__";
+const WINNING_TEAM_KEY = "__TREASURE_HUNT_WINNER__";
 
 const globalStore = globalThis as unknown as {
   [GLOBAL_KEY]?: Record<TeamId, TeamState>;
+  [WINNING_TEAM_KEY]?: TeamId | null;
+};
+
+const getWinningTeam = (): TeamId | null => {
+  if (!(WINNING_TEAM_KEY in globalStore)) {
+    globalStore[WINNING_TEAM_KEY] = null;
+  }
+  return globalStore[WINNING_TEAM_KEY] ?? null;
+};
+
+const setWinningTeam = (teamId: TeamId | null) => {
+  globalStore[WINNING_TEAM_KEY] = teamId;
 };
 
 const getTeamsRef = (): Record<TeamId, TeamState> => {
@@ -65,17 +78,23 @@ export const getTeamsSnapshot = () => {
   const teams = getTeamsRef();
   return TEAM_IDS.map((id) => ({
     id,
+    teamName: TEAM_NAMES[id] || id,
     ...teams[id],
   }));
 };
 
 export const getTeamSnapshot = (teamId: TeamId) => {
   const teams = getTeamsRef();
-  return { id: teamId, ...teams[teamId] };
+  return { 
+    id: teamId, 
+    teamName: TEAM_NAMES[teamId] || teamId,
+    ...teams[teamId] 
+  };
 };
 
 export const resetAllTeams = () => {
   globalStore[GLOBAL_KEY] = createInitialTeams();
+  setWinningTeam(null);
 };
 
 export const incrementTeamAttempts = (teamId: TeamId, amount = 1) => {
@@ -85,16 +104,43 @@ export const incrementTeamAttempts = (teamId: TeamId, amount = 1) => {
   teams[teamId].attemptsLeft += delta;
 };
 
-export const submitTeamCode = (teamId: TeamId, code: string, timeTaken: number) => {
+const TEAM_NAMES: Record<TeamId, string> = {
+  jihaad: "Jihaad",
+  adal: "Adal",
+  yakeen: "Yakeen",
+  sabar: "Sabar"
+};
+
+export function submitTeamCode(teamId: TeamId, code: string, timeTaken: number) {
   const teams = getTeamsRef();
   const team = teams[teamId];
+  const winner = getWinningTeam();
+
+  // If someone already won, return that info
+  if (winner && winner !== teamId) {
+    return { 
+      success: false, 
+      alreadyWon: true, 
+      winningTeam: TEAM_NAMES[winner] || winner,
+      attemptsLeft: team.attemptsLeft 
+    };
+  }
 
   if (team.completed) {
-    return { success: true, attemptsLeft: team.attemptsLeft, alreadyWon: true };
+    return { 
+      success: true, 
+      attemptsLeft: 0, 
+      alreadyWon: true,
+      winningTeam: TEAM_NAMES[teamId] || teamId
+    };
   }
 
   if (team.attemptsLeft <= 0) {
-    return { success: false, attemptsLeft: 0 };
+    return { 
+      success: false, 
+      attemptsLeft: 0,
+      winningTeam: winner ? TEAM_NAMES[winner] || winner : undefined
+    };
   }
 
   const cleanCode = String(code).trim();
@@ -104,10 +150,22 @@ export const submitTeamCode = (teamId: TeamId, code: string, timeTaken: number) 
   team.submissions += 1;
   team.last_time_taken = timeTaken;
 
-  if (isWin) {
+  if (code === WIN_CODE) {
     team.completed = true;
-    team.time_taken = timeTaken;
+    team.time_taken = team.time_taken ?? timeTaken;
+    team.last_time_taken = timeTaken;
+    setWinningTeam(teamId);
+    return { 
+      success: true, 
+      attemptsLeft: 0, 
+      alreadyWon: false,
+      winningTeam: TEAM_NAMES[teamId] || teamId
+    };
   }
-
-  return { success: isWin, attemptsLeft: team.attemptsLeft };
+  
+  return { 
+    success: false, 
+    attemptsLeft: team.attemptsLeft,
+    winningTeam: winner ? TEAM_NAMES[winner] || winner : undefined
+  };
 };

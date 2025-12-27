@@ -2,6 +2,13 @@
 
 import { useEffect, useState } from "react";
 
+const TEAM_NAMES: Record<string, string> = {
+  jihaad: "Jihaad",
+  adal: "Adal",
+  yakeen: "Yakeen",
+  sabar: "Sabar"
+};
+
 type TeamRow = {
   id: string;
   attemptsLeft: number;
@@ -9,6 +16,7 @@ type TeamRow = {
   completed: boolean;
   time_taken: number | null;
   last_time_taken: number | null;
+  teamName?: string;
 };
 
 export default function Admin() {
@@ -22,7 +30,15 @@ export default function Admin() {
     try {
       const res = await fetch("/api/admin", { cache: "no-store" });
       const data = await res.json();
-      setTeams(Array.isArray(data?.teams) ? data.teams : []);
+      const teamsData = Array.isArray(data?.teams) ? data.teams : [];
+      
+      // Add team names to the team data
+      const teamsWithNames = teamsData.map((team: TeamRow) => ({
+        ...team,
+        teamName: TEAM_NAMES[team.id] || team.id
+      }));
+      
+      setTeams(teamsWithNames);
     } catch {
       setError("Failed to load admin data");
     } finally {
@@ -94,7 +110,7 @@ export default function Admin() {
               <tbody>
                 {teams.map((t) => (
                   <tr key={t.id} className="border-b last:border-b-0">
-                    <td className="p-4 font-semibold">{capitalize(t.id)}</td>
+                    <td className="p-4 font-semibold">{t.teamName || capitalize(t.id)}</td>
                     <td className="p-4">
                       {t.completed ? (
                         <span className="font-bold text-green-700">Yes</span>
