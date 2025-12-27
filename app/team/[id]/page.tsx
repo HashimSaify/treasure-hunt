@@ -21,6 +21,8 @@ export default function TeamPage() {
 
   const headerColor = TEAM_COLORS[id as string] || "bg-black";
 
+  const keypadDisabled = attemptsLeft === 0 || result === "win";
+
   const startGame = () => {
     setStarted(true);
     setStartTime(Date.now());
@@ -28,17 +30,17 @@ export default function TeamPage() {
   };
 
   const pressNumber = (num: string) => {
-    if (code.length >= 6 || attemptsLeft === 0) return;
+    if (code.length >= 6 || keypadDisabled) return;
     setCode((prev) => [...prev, num]);
   };
 
   const clearCode = () => {
-    if (attemptsLeft === 0) return;
+    if (keypadDisabled) return;
     setCode([]);
   };
 
   const submitCode = async () => {
-    if (code.length !== 6 || !startTime || attemptsLeft === 0) return;
+    if (code.length !== 6 || !startTime || keypadDisabled) return;
 
     const timeTaken = Math.floor((Date.now() - startTime) / 1000);
 
@@ -95,6 +97,12 @@ export default function TeamPage() {
               </p>
             )}
 
+            {result === "win" && (
+              <p className="text-green-600 font-bold text-lg">
+                ✅ Game completed
+              </p>
+            )}
+
             {/* CODE DISPLAY */}
             <div className="flex gap-3 text-3xl font-extrabold text-black">
               {Array.from({ length: 6 }).map((_, i) => (
@@ -115,12 +123,12 @@ export default function TeamPage() {
               {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => (
                 <button
                   key={n}
-                  disabled={attemptsLeft === 0}
+                  disabled={keypadDisabled}
                   onClick={() => pressNumber(String(n))}
                   className={`w-20 h-16 sm:w-24 sm:h-20
                     text-3xl font-extrabold rounded-xl shadow-md
                     ${
-                      attemptsLeft === 0
+                      keypadDisabled
                         ? "bg-gray-200 text-gray-400 cursor-not-allowed"
                         : "bg-gray-300 text-black active:scale-95"
                     }`}
@@ -131,11 +139,11 @@ export default function TeamPage() {
 
               <button
                 onClick={clearCode}
-                disabled={attemptsLeft === 0}
+                disabled={keypadDisabled}
                 className={`w-20 h-16 sm:w-24 sm:h-20
                   text-xl font-bold rounded-xl shadow-md
                   ${
-                    attemptsLeft === 0
+                    keypadDisabled
                       ? "bg-gray-300 text-gray-400 cursor-not-allowed"
                       : "bg-red-600 text-white active:scale-95"
                   }`}
@@ -145,11 +153,11 @@ export default function TeamPage() {
 
               <button
                 onClick={() => pressNumber("0")}
-                disabled={attemptsLeft === 0}
+                disabled={keypadDisabled}
                 className={`w-20 h-16 sm:w-24 sm:h-20
                   text-3xl font-extrabold rounded-xl shadow-md
                   ${
-                    attemptsLeft === 0
+                    keypadDisabled
                       ? "bg-gray-200 text-gray-400 cursor-not-allowed"
                       : "bg-gray-300 text-black active:scale-95"
                   }`}
@@ -159,11 +167,11 @@ export default function TeamPage() {
 
               <button
                 onClick={submitCode}
-                disabled={attemptsLeft === 0}
+                disabled={keypadDisabled}
                 className={`w-20 h-16 sm:w-24 sm:h-20
                   text-xl font-bold rounded-xl shadow-md
                   ${
-                    attemptsLeft === 0
+                    keypadDisabled
                       ? "bg-gray-300 text-gray-400 cursor-not-allowed"
                       : "bg-green-600 text-white active:scale-95"
                   }`}
@@ -186,8 +194,8 @@ export default function TeamPage() {
         >
           <h1 className="text-3xl sm:text-5xl font-extrabold mb-4">
             {result === "win"
-              ? "🎉 CONGRATULATIONS 🎉"
-              : "❌ WRONG CODE ❌"}
+              ? "🎉 Congratulations! You won the game 🎉"
+              : "❌ Wrong code ❌"}
           </h1>
 
           <p className="text-lg sm:text-2xl opacity-90">
