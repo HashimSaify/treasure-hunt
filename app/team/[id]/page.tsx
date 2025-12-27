@@ -63,8 +63,9 @@ export default function TeamPage() {
         {id} Team
       </header>
 
-      {/* CONTENT */}
-      <main className="flex-1 flex flex-col items-center justify-center gap-8 bg-white">
+      {/* MAIN CONTENT */}
+      <main className="flex-1 flex flex-col items-center justify-center gap-8 bg-white px-4">
+        {/* START BUTTON */}
         {!started && (
           <button
             onClick={startGame}
@@ -74,14 +75,18 @@ export default function TeamPage() {
           </button>
         )}
 
+        {/* GAME UI */}
         {started && (
           <>
             {/* CODE DISPLAY */}
-            <div className="flex gap-4 text-3xl font-bold">
+            <div className="flex gap-3 text-3xl font-extrabold text-black">
               {Array.from({ length: 6 }).map((_, i) => (
                 <div
                   key={i}
-                  className="w-12 h-14 border-2 border-black flex items-center justify-center"
+                  className="w-12 h-14 sm:w-14 sm:h-16
+                             border-2 border-black
+                             flex items-center justify-center
+                             bg-white rounded"
                 >
                   {code[i] ?? ""}
                 </div>
@@ -94,7 +99,10 @@ export default function TeamPage() {
                 <button
                   key={n}
                   onClick={() => pressNumber(String(n))}
-                  className="w-20 h-16 text-2xl bg-gray-200 rounded"
+                  className="w-20 h-16 sm:w-24 sm:h-20
+                             text-3xl font-extrabold
+                             bg-gray-300 text-black
+                             rounded-xl shadow-md active:scale-95"
                 >
                   {n}
                 </button>
@@ -102,21 +110,30 @@ export default function TeamPage() {
 
               <button
                 onClick={clearCode}
-                className="w-20 h-16 text-xl bg-red-500 text-white rounded"
+                className="w-20 h-16 sm:w-24 sm:h-20
+                           text-xl font-bold
+                           bg-red-600 text-white
+                           rounded-xl shadow-md active:scale-95"
               >
                 Clear
               </button>
 
               <button
                 onClick={() => pressNumber("0")}
-                className="w-20 h-16 text-2xl bg-gray-200 rounded"
+                className="w-20 h-16 sm:w-24 sm:h-20
+                           text-3xl font-extrabold
+                           bg-gray-300 text-black
+                           rounded-xl shadow-md active:scale-95"
               >
                 0
               </button>
 
               <button
                 onClick={submitCode}
-                className="w-20 h-16 text-xl bg-green-500 text-white rounded"
+                className="w-20 h-16 sm:w-24 sm:h-20
+                           text-xl font-bold
+                           bg-green-600 text-white
+                           rounded-xl shadow-md active:scale-95"
               >
                 OK
               </button>
@@ -128,14 +145,21 @@ export default function TeamPage() {
       {/* RESULT POPUP */}
       {result && (
         <div
-          className={`fixed inset-0 flex items-center justify-center text-4xl text-white ${
-            result === "win" ? "bg-green-600" : "bg-red-600"
-          }`}
+          className={`fixed inset-0 z-50
+            flex flex-col items-center justify-center
+            text-center px-6 text-white
+            ${result === "win" ? "bg-green-600" : "bg-red-600"}`}
           onClick={() => setResult(null)}
         >
-          {result === "win"
-            ? "🎉 CONGRATULATIONS 🎉"
-            : "❌ WRONG CODE ❌"}
+          <h1 className="text-3xl sm:text-5xl font-extrabold mb-4">
+            {result === "win"
+              ? "🎉 CONGRATULATIONS 🎉"
+              : "❌ WRONG CODE ❌"}
+          </h1>
+
+          <p className="text-lg sm:text-2xl opacity-90">
+            Tap anywhere to continue
+          </p>
         </div>
       )}
     </div>
