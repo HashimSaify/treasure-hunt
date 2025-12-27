@@ -17,11 +17,11 @@ export default function TeamPage() {
   const [code, setCode] = useState<string[]>([]);
   const [startTime, setStartTime] = useState<number | null>(null);
   const [result, setResult] = useState<"win" | "lose" | null>(null);
-  const [attemptsLeft, setAttemptsLeft] = useState<number>(5);
+  const [alreadyWon, setAlreadyWon] = useState(false);
+  const [attemptsLeft, setAttemptsLeft] = useState(5);
 
   const headerColor = TEAM_COLORS[id as string] || "bg-black";
-
-  const keypadDisabled = attemptsLeft === 0 || result === "win";
+  const keypadDisabled = attemptsLeft === 0 || alreadyWon || result === "win";
 
   const startGame = () => {
     setStarted(true);
@@ -56,7 +56,14 @@ export default function TeamPage() {
 
     const data = await res.json();
 
-    setAttemptsLeft(data.attemptsLeft);
+    setAttemptsLeft(data.attemptsLeft ?? attemptsLeft);
+
+    if (data.alreadyWon) {
+      setAlreadyWon(true);
+      setResult("win");
+      return;
+    }
+
     setResult(data.success ? "win" : "lose");
 
     if (!data.success) {
@@ -73,7 +80,7 @@ export default function TeamPage() {
         {id} Team
       </header>
 
-      {/* MAIN CONTENT */}
+      {/* MAIN */}
       <main className="flex-1 flex flex-col items-center justify-center gap-6 bg-white px-4">
         {!started && (
           <button
@@ -86,51 +93,46 @@ export default function TeamPage() {
 
         {started && (
           <>
-            {/* ATTEMPTS LEFT */}
-            <p className="text-lg font-bold text-black">
+            <p className="text-lg font-bold">
               Attempts left: {attemptsLeft}
             </p>
 
-            {attemptsLeft === 0 && (
+            {alreadyWon && (
+              <p className="text-green-600 font-bold text-lg">
+                🏆 You have already won the game
+              </p>
+            )}
+
+            {attemptsLeft === 0 && !alreadyWon && (
               <p className="text-red-600 font-bold text-lg">
                 ❌ No attempts left
               </p>
             )}
 
-            {result === "win" && (
-              <p className="text-green-600 font-bold text-lg">
-                ✅ Game completed
-              </p>
-            )}
-
             {/* CODE DISPLAY */}
-            <div className="flex gap-3 text-3xl font-extrabold text-black">
+            <div className="flex gap-3 text-3xl font-extrabold">
               {Array.from({ length: 6 }).map((_, i) => (
                 <div
                   key={i}
-                  className="w-12 h-14 sm:w-14 sm:h-16
-                             border-2 border-black
-                             flex items-center justify-center
-                             bg-white rounded"
+                  className="w-12 h-14 border-2 border-black flex items-center justify-center"
                 >
                   {code[i] ?? ""}
                 </div>
               ))}
             </div>
 
-            {/* NUMBER PAD */}
+            {/* KEYPAD */}
             <div className="grid grid-cols-3 gap-4">
               {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => (
                 <button
                   key={n}
                   disabled={keypadDisabled}
                   onClick={() => pressNumber(String(n))}
-                  className={`w-20 h-16 sm:w-24 sm:h-20
-                    text-3xl font-extrabold rounded-xl shadow-md
+                  className={`w-20 h-16 text-3xl font-bold rounded-xl
                     ${
                       keypadDisabled
-                        ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-                        : "bg-gray-300 text-black active:scale-95"
+                        ? "bg-gray-200 text-gray-400"
+                        : "bg-gray-300 text-black"
                     }`}
                 >
                   {n}
@@ -140,12 +142,11 @@ export default function TeamPage() {
               <button
                 onClick={clearCode}
                 disabled={keypadDisabled}
-                className={`w-20 h-16 sm:w-24 sm:h-20
-                  text-xl font-bold rounded-xl shadow-md
+                className={`w-20 h-16 text-xl font-bold rounded-xl
                   ${
                     keypadDisabled
-                      ? "bg-gray-300 text-gray-400 cursor-not-allowed"
-                      : "bg-red-600 text-white active:scale-95"
+                      ? "bg-gray-300 text-gray-400"
+                      : "bg-red-600 text-white"
                   }`}
               >
                 Clear
@@ -154,12 +155,11 @@ export default function TeamPage() {
               <button
                 onClick={() => pressNumber("0")}
                 disabled={keypadDisabled}
-                className={`w-20 h-16 sm:w-24 sm:h-20
-                  text-3xl font-extrabold rounded-xl shadow-md
+                className={`w-20 h-16 text-3xl font-bold rounded-xl
                   ${
                     keypadDisabled
-                      ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-                      : "bg-gray-300 text-black active:scale-95"
+                      ? "bg-gray-200 text-gray-400"
+                      : "bg-gray-300 text-black"
                   }`}
               >
                 0
@@ -168,12 +168,11 @@ export default function TeamPage() {
               <button
                 onClick={submitCode}
                 disabled={keypadDisabled}
-                className={`w-20 h-16 sm:w-24 sm:h-20
-                  text-xl font-bold rounded-xl shadow-md
+                className={`w-20 h-16 text-xl font-bold rounded-xl
                   ${
                     keypadDisabled
-                      ? "bg-gray-300 text-gray-400 cursor-not-allowed"
-                      : "bg-green-600 text-white active:scale-95"
+                      ? "bg-gray-300 text-gray-400"
+                      : "bg-green-600 text-white"
                   }`}
               >
                 OK
@@ -183,24 +182,20 @@ export default function TeamPage() {
         )}
       </main>
 
-      {/* RESULT POPUP */}
+      {/* POPUP */}
       {result && (
         <div
-          className={`fixed inset-0 z-50
-            flex flex-col items-center justify-center
-            text-center px-6 text-white
+          className={`fixed inset-0 z-50 flex items-center justify-center text-white text-center px-6
             ${result === "win" ? "bg-green-600" : "bg-red-600"}`}
           onClick={() => setResult(null)}
         >
-          <h1 className="text-3xl sm:text-5xl font-extrabold mb-4">
-            {result === "win"
+          <h1 className="text-3xl sm:text-5xl font-extrabold">
+            {alreadyWon
+              ? "🏆 You have already won the game 🏆"
+              : result === "win"
               ? "🎉 Congratulations! You won the game 🎉"
               : "❌ Wrong code ❌"}
           </h1>
-
-          <p className="text-lg sm:text-2xl opacity-90">
-            Tap anywhere to continue
-          </p>
         </div>
       )}
     </div>
