@@ -16,7 +16,9 @@ export const metadata: Metadata = {
   title: "Hatim Technologies",
   description: "A project by Hatim Technologies - https://hatimtechnologies.in",
   icons: {
-    icon: "/favicon.ico",
+    icon: "/logo.ico",
+    apple: "/logo.ico",
+    shortcut: "/logo.ico"
   },
 };
 
