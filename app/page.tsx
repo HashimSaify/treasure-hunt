@@ -1,7 +1,10 @@
 export default function Home() {
   return (
     <main className="min-h-screen flex flex-col items-center justify-center gap-6 bg-gray-100">
-      <h1 className="text-3xl font-bold">Select Your Team</h1>
+      <h1 className="text-3xl font-bold text-black mb-8">
+  Select Your Team
+</h1>
+
 
       <a href="/team/jihaad" className="w-72 p-4 text-white text-center rounded bg-red-600">Jihaad</a>
       <a href="/team/adal" className="w-72 p-4 text-white text-center rounded bg-blue-600">Adal</a>
