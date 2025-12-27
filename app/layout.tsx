@@ -13,12 +13,32 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://treasure-hunt-rho-nine.vercel.app'),
   title: "Hatim Technologies",
   description: "A project by Hatim Technologies - https://hatimtechnologies.in",
   icons: {
     icon: "/logo.ico",
     apple: "/logo.ico",
     shortcut: "/logo.ico"
+  },
+  openGraph: {
+    title: "Hatim Technologies",
+    description: "A project by Hatim Technologies - https://hatimtechnologies.in",
+    images: [
+      {
+        url: "/logo2.jpeg",
+        width: 1200,
+        height: 630,
+        alt: "Hatim Technologies",
+      },
+    ],
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Hatim Technologies",
+    description: "A project by Hatim Technologies - https://hatimtechnologies.in",
+    images: ["/logo2.jpeg"],
   },
 };
 
