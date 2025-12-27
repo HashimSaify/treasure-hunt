@@ -23,26 +23,22 @@ export default function TeamPage() {
     setOtp(copy);
 
     if (value && index < 5) {
-      const next = document.getElementById(`otp-${index + 1}`);
-      (next as HTMLInputElement)?.focus();
+      document.getElementById(`otp-${index + 1}`)?.focus();
     }
   };
 
   const submit = async () => {
-  if (otp.join("").length !== 6) {
-    alert("Enter 6-digit code");
-    return;
-  }
+    if (otp.join("").length !== 6) {
+      alert("Enter 6-digit code");
+      return;
+    }
 
-  setSubmitting(true);
-  const timeTaken = Math.floor((Date.now() - startTime) / 1000);
+    setSubmitting(true);
+    const timeTaken = Math.floor((Date.now() - startTime) / 1000);
 
-  try {
     const res = await fetch("/api/attempt", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json", // ✅ REQUIRED
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         teamId: id,
         code: otp.join(""),
@@ -51,14 +47,9 @@ export default function TeamPage() {
     });
 
     const data = await res.json();
+    setSubmitting(false);
     setResult(data.success ? "win" : "lose");
-  } catch (err) {
-    alert("Something went wrong");
-  } finally {
-    setSubmitting(false); // ✅ ALWAYS RESET
-  }
-};
-
+  };
 
   return (
     <main className="min-h-screen flex flex-col items-center justify-center gap-6 bg-black text-white">
@@ -86,7 +77,6 @@ export default function TeamPage() {
         Submit
       </button>
 
-      {/* FULL SCREEN RESULT */}
       {result && (
         <div
           className={`fixed inset-0 flex flex-col items-center justify-center text-4xl ${
@@ -94,7 +84,9 @@ export default function TeamPage() {
           }`}
           onClick={() => setResult(null)}
         >
-          {result === "win" ? "🎉 CONGRATULATIONS 🎉" : "❌ WRONG CODE ❌"}
+          {result === "win"
+            ? "🎉 CONGRATULATIONS 🎉"
+            : "❌ WRONG CODE ❌"}
           <p className="text-lg mt-6">(Tap anywhere)</p>
         </div>
       )}
