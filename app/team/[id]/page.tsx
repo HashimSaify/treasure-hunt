@@ -17,6 +17,7 @@ export default function TeamPage() {
   const [code, setCode] = useState<string[]>([]);
   const [startTime, setStartTime] = useState<number | null>(null);
   const [result, setResult] = useState<"win" | "lose" | null>(null);
+  const [attemptsLeft, setAttemptsLeft] = useState<number>(5);
 
   const headerColor = TEAM_COLORS[id as string] || "bg-black";
 
@@ -27,16 +28,17 @@ export default function TeamPage() {
   };
 
   const pressNumber = (num: string) => {
-    if (code.length >= 6) return;
-    setCode([...code, num]);
+    if (code.length >= 6 || attemptsLeft === 0) return;
+    setCode((prev) => [...prev, num]);
   };
 
   const clearCode = () => {
+    if (attemptsLeft === 0) return;
     setCode([]);
   };
 
   const submitCode = async () => {
-    if (code.length !== 6 || !startTime) return;
+    if (code.length !== 6 || !startTime || attemptsLeft === 0) return;
 
     const timeTaken = Math.floor((Date.now() - startTime) / 1000);
 
@@ -51,7 +53,13 @@ export default function TeamPage() {
     });
 
     const data = await res.json();
+
+    setAttemptsLeft(data.attemptsLeft);
     setResult(data.success ? "win" : "lose");
+
+    if (!data.success) {
+      setCode([]);
+    }
   };
 
   return (
@@ -64,8 +72,7 @@ export default function TeamPage() {
       </header>
 
       {/* MAIN CONTENT */}
-      <main className="flex-1 flex flex-col items-center justify-center gap-8 bg-white px-4">
-        {/* START BUTTON */}
+      <main className="flex-1 flex flex-col items-center justify-center gap-6 bg-white px-4">
         {!started && (
           <button
             onClick={startGame}
@@ -75,9 +82,19 @@ export default function TeamPage() {
           </button>
         )}
 
-        {/* GAME UI */}
         {started && (
           <>
+            {/* ATTEMPTS LEFT */}
+            <p className="text-lg font-bold text-black">
+              Attempts left: {attemptsLeft}
+            </p>
+
+            {attemptsLeft === 0 && (
+              <p className="text-red-600 font-bold text-lg">
+                ❌ No attempts left
+              </p>
+            )}
+
             {/* CODE DISPLAY */}
             <div className="flex gap-3 text-3xl font-extrabold text-black">
               {Array.from({ length: 6 }).map((_, i) => (
@@ -98,11 +115,15 @@ export default function TeamPage() {
               {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => (
                 <button
                   key={n}
+                  disabled={attemptsLeft === 0}
                   onClick={() => pressNumber(String(n))}
-                  className="w-20 h-16 sm:w-24 sm:h-20
-                             text-3xl font-extrabold
-                             bg-gray-300 text-black
-                             rounded-xl shadow-md active:scale-95"
+                  className={`w-20 h-16 sm:w-24 sm:h-20
+                    text-3xl font-extrabold rounded-xl shadow-md
+                    ${
+                      attemptsLeft === 0
+                        ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                        : "bg-gray-300 text-black active:scale-95"
+                    }`}
                 >
                   {n}
                 </button>
@@ -110,30 +131,42 @@ export default function TeamPage() {
 
               <button
                 onClick={clearCode}
-                className="w-20 h-16 sm:w-24 sm:h-20
-                           text-xl font-bold
-                           bg-red-600 text-white
-                           rounded-xl shadow-md active:scale-95"
+                disabled={attemptsLeft === 0}
+                className={`w-20 h-16 sm:w-24 sm:h-20
+                  text-xl font-bold rounded-xl shadow-md
+                  ${
+                    attemptsLeft === 0
+                      ? "bg-gray-300 text-gray-400 cursor-not-allowed"
+                      : "bg-red-600 text-white active:scale-95"
+                  }`}
               >
                 Clear
               </button>
 
               <button
                 onClick={() => pressNumber("0")}
-                className="w-20 h-16 sm:w-24 sm:h-20
-                           text-3xl font-extrabold
-                           bg-gray-300 text-black
-                           rounded-xl shadow-md active:scale-95"
+                disabled={attemptsLeft === 0}
+                className={`w-20 h-16 sm:w-24 sm:h-20
+                  text-3xl font-extrabold rounded-xl shadow-md
+                  ${
+                    attemptsLeft === 0
+                      ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                      : "bg-gray-300 text-black active:scale-95"
+                  }`}
               >
                 0
               </button>
 
               <button
                 onClick={submitCode}
-                className="w-20 h-16 sm:w-24 sm:h-20
-                           text-xl font-bold
-                           bg-green-600 text-white
-                           rounded-xl shadow-md active:scale-95"
+                disabled={attemptsLeft === 0}
+                className={`w-20 h-16 sm:w-24 sm:h-20
+                  text-xl font-bold rounded-xl shadow-md
+                  ${
+                    attemptsLeft === 0
+                      ? "bg-gray-300 text-gray-400 cursor-not-allowed"
+                      : "bg-green-600 text-white active:scale-95"
+                  }`}
               >
                 OK
               </button>
