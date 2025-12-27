@@ -58,8 +58,7 @@ export default function Admin() {
   return (
     <main className="min-h-screen bg-gray-100 text-black p-6">
       <div className="max-w-5xl mx-auto flex flex-col gap-6">
-        <header className="flex items-center justify-between gap-4">
-          <h1 className="text-3xl font-bold">Admin Panel</h1>
+        <header className="flex items-center justify-end gap-4">
           <div className="flex gap-3">
             <button
               onClick={load}

@@ -230,28 +230,37 @@ export default function TeamPage() {
         )}
       </main>
 
-      {/* POPUP */}
+      {/* WIN/LOSE POPUP */}
       {result && (
-        <div
-          className={`fixed inset-0 z-50 flex flex-col items-center justify-between text-white text-center px-6 py-10
-            ${result === "win" ? "bg-green-600" : "bg-red-600"}`}
-        >
-          <div />
-
-          <h1 className="text-3xl sm:text-5xl font-extrabold">
-            {result === "win"
-              ? alreadyWonPopup
-                ? "🏆 You have already won the game 🏆"
-                : "🎉 Congratulations! You won the game 🎉"
-              : "❌ Wrong code ❌"}
-          </h1>
-
-          <button
-            onClick={closePopup}
-            className="w-full max-w-md h-16 text-2xl font-extrabold rounded-xl bg-black/30 border-2 border-white"
-          >
-            Back
-          </button>
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
+          <div className="bg-white p-8 rounded-xl max-w-sm w-full mx-4 shadow-2xl transform transition-all">
+            <div className="text-center space-y-4">
+              <div className="text-6xl mb-4">
+                {result === "win" ? "🎉" : "❌"}
+              </div>
+              <h2 className="text-3xl font-extrabold text-gray-900">
+                {result === "win" 
+                  ? `Team ${teamLabel} Wins!` 
+                  : "Try Again!"}
+              </h2>
+              <p className="text-lg text-gray-700">
+                {result === "win"
+                  ? `Congratulations Team ${teamLabel}! You've found the treasure!`
+                  : attemptsLeft > 0 
+                    ? `Incorrect code. ${attemptsLeft} ${attemptsLeft === 1 ? 'attempt' : 'attempts'} left.`
+                    : "No attempts left!"}
+              </p>
+              <button
+                onClick={closePopup}
+                className={`w-full mt-6 py-4 px-6 rounded-xl font-bold text-lg transition-colors
+                  ${result === "win" 
+                    ? 'bg-green-600 hover:bg-green-700 text-white' 
+                    : 'bg-blue-600 hover:bg-blue-700 text-white'}`}
+              >
+                {result === "win" ? 'Awesome!' : 'Try Again'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
