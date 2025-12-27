@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 const TEAM_COLORS: Record<string, string> = {
   jihaad: "bg-red-600",
@@ -13,15 +13,43 @@ const TEAM_COLORS: Record<string, string> = {
 export default function TeamPage() {
   const { id } = useParams();
 
+  const teamId = Array.isArray(id) ? id[0] : String(id ?? "");
+
   const [started, setStarted] = useState(false);
   const [code, setCode] = useState<string[]>([]);
   const [startTime, setStartTime] = useState<number | null>(null);
   const [result, setResult] = useState<"win" | "lose" | null>(null);
+  const [alreadyWonPopup, setAlreadyWonPopup] = useState(false);
   const [alreadyWon, setAlreadyWon] = useState(false);
-  const [attemptsLeft, setAttemptsLeft] = useState(5);
+  const [attemptsLeft, setAttemptsLeft] = useState(1);
 
-  const headerColor = TEAM_COLORS[id as string] || "bg-black";
+  const headerColor = TEAM_COLORS[teamId] || "bg-black";
+  const startButtonTextColor = teamId === "sabar" ? "text-black" : "text-white";
   const keypadDisabled = attemptsLeft === 0 || alreadyWon || result === "win";
+
+  const teamName = teamId;
+  const teamLabel = teamName
+    ? `${teamName.charAt(0).toUpperCase()}${teamName.slice(1)}`
+    : "Team";
+
+  const refreshTeam = async () => {
+    if (!teamId) return;
+    const res = await fetch(`/api/team/${teamId}`, { cache: "no-store" });
+    const data = await res.json();
+    if (!data?.ok) return;
+
+    const t = data.team;
+    if (typeof t?.attemptsLeft === "number") {
+      setAttemptsLeft(t.attemptsLeft);
+    }
+
+    setAlreadyWon(Boolean(t?.completed));
+  };
+
+  useEffect(() => {
+    void refreshTeam();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [teamId]);
 
   const startGame = () => {
     setStarted(true);
@@ -48,7 +76,7 @@ export default function TeamPage() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        teamId: id,
+        teamId,
         code: code.join(""),
         timeTaken,
       }),
@@ -56,9 +84,12 @@ export default function TeamPage() {
 
     const data = await res.json();
 
-    setAttemptsLeft(data.attemptsLeft ?? attemptsLeft);
+    if (typeof data?.attemptsLeft === "number") {
+      setAttemptsLeft(data.attemptsLeft);
+    }
 
     if (data.alreadyWon) {
+      setAlreadyWonPopup(true);
       setAlreadyWon(true);
       setResult("win");
       return;
@@ -66,9 +97,19 @@ export default function TeamPage() {
 
     setResult(data.success ? "win" : "lose");
 
+    if (data.success) {
+      setAlreadyWonPopup(false);
+      setAlreadyWon(true);
+    }
+
     if (!data.success) {
       setCode([]);
     }
+  };
+
+  const closePopup = () => {
+    setResult(null);
+    setAlreadyWonPopup(false);
   };
 
   return (
@@ -77,7 +118,7 @@ export default function TeamPage() {
       <header
         className={`h-20 flex items-center justify-center text-white text-3xl font-bold ${headerColor}`}
       >
-        {id} Team
+        {teamLabel} Team
       </header>
 
       {/* MAIN */}
@@ -85,7 +126,7 @@ export default function TeamPage() {
         {!started && (
           <button
             onClick={startGame}
-            className="px-12 py-5 text-2xl bg-black text-white rounded-lg"
+            className={`px-12 py-5 text-2xl rounded-lg ${headerColor} ${startButtonTextColor}`}
           >
             ▶ START GAME
           </button>
@@ -93,6 +134,13 @@ export default function TeamPage() {
 
         {started && (
           <>
+            <button
+              onClick={refreshTeam}
+              className="px-6 py-2 rounded border bg-white text-black font-semibold"
+            >
+              Refresh
+            </button>
+
             <p className="text-lg font-bold">
               Attempts left: {attemptsLeft}
             </p>
@@ -110,11 +158,11 @@ export default function TeamPage() {
             )}
 
             {/* CODE DISPLAY */}
-            <div className="flex gap-3 text-3xl font-extrabold">
+            <div className="flex gap-3 text-3xl font-extrabold text-black">
               {Array.from({ length: 6 }).map((_, i) => (
                 <div
                   key={i}
-                  className="w-12 h-14 border-2 border-black flex items-center justify-center"
+                  className="w-12 h-14 border-2 border-black bg-white flex items-center justify-center text-black"
                 >
                   {code[i] ?? ""}
                 </div>
@@ -185,17 +233,25 @@ export default function TeamPage() {
       {/* POPUP */}
       {result && (
         <div
-          className={`fixed inset-0 z-50 flex items-center justify-center text-white text-center px-6
+          className={`fixed inset-0 z-50 flex flex-col items-center justify-between text-white text-center px-6 py-10
             ${result === "win" ? "bg-green-600" : "bg-red-600"}`}
-          onClick={() => setResult(null)}
         >
+          <div />
+
           <h1 className="text-3xl sm:text-5xl font-extrabold">
-            {alreadyWon
-              ? "🏆 You have already won the game 🏆"
-              : result === "win"
-              ? "🎉 Congratulations! You won the game 🎉"
+            {result === "win"
+              ? alreadyWonPopup
+                ? "🏆 You have already won the game 🏆"
+                : "🎉 Congratulations! You won the game 🎉"
               : "❌ Wrong code ❌"}
           </h1>
+
+          <button
+            onClick={closePopup}
+            className="w-full max-w-md h-16 text-2xl font-extrabold rounded-xl bg-black/30 border-2 border-white"
+          >
+            Back
+          </button>
         </div>
       )}
     </div>
