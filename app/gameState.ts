@@ -116,14 +116,25 @@ export function submitTeamCode(teamId: TeamId, code: string, timeTaken: number) 
   const team = teams[teamId];
   const winner = getWinningTeam();
 
-  // If someone already won, return that info
-  if (winner && winner !== teamId) {
-    return { 
-      success: false, 
-      alreadyWon: true, 
-      winningTeam: TEAM_NAMES[winner] || winner,
-      attemptsLeft: team.attemptsLeft 
-    };
+  // If someone already won (including if it's a different team), prevent any further wins
+  if (winner) {
+    if (winner === teamId) {
+      // This team already won, return success
+      return { 
+        success: true, 
+        attemptsLeft: 0, 
+        alreadyWon: true,
+        winningTeam: TEAM_NAMES[teamId] || teamId
+      };
+    } else {
+      // Another team already won, block this submission
+      return { 
+        success: false, 
+        alreadyWon: true, 
+        winningTeam: TEAM_NAMES[winner] || winner,
+        attemptsLeft: team.attemptsLeft 
+      };
+    }
   }
 
   if (team.completed) {
@@ -139,33 +150,45 @@ export function submitTeamCode(teamId: TeamId, code: string, timeTaken: number) 
     return { 
       success: false, 
       attemptsLeft: 0,
-      winningTeam: winner ? TEAM_NAMES[winner] || winner : undefined
+      winningTeam: undefined
     };
   }
 
   const cleanCode = String(code).trim();
-  const isWin = cleanCode === WIN_CODE;
 
   team.attemptsLeft -= 1;
   team.submissions += 1;
   team.last_time_taken = timeTaken;
 
-  if (code === WIN_CODE) {
-    team.completed = true;
-    team.time_taken = team.time_taken ?? timeTaken;
-    team.last_time_taken = timeTaken;
-    setWinningTeam(teamId);
-    return { 
-      success: true, 
-      attemptsLeft: 0, 
-      alreadyWon: false,
-      winningTeam: TEAM_NAMES[teamId] || teamId
-    };
+  // Check if code is correct - we already verified there's no winner at the start
+  if (cleanCode === WIN_CODE) {
+    // Final check to ensure no winner was set (shouldn't happen, but safety check)
+    const currentWinner = getWinningTeam();
+    if (!currentWinner) {
+      team.completed = true;
+      team.time_taken = team.time_taken ?? timeTaken;
+      team.last_time_taken = timeTaken;
+      setWinningTeam(teamId);
+      return { 
+        success: true, 
+        attemptsLeft: 0, 
+        alreadyWon: false,
+        winningTeam: TEAM_NAMES[teamId] || teamId
+      };
+    } else {
+      // Someone else won (shouldn't happen, but handle it)
+      return {
+        success: false,
+        alreadyWon: true,
+        winningTeam: TEAM_NAMES[currentWinner] || currentWinner,
+        attemptsLeft: team.attemptsLeft
+      };
+    }
   }
   
   return { 
     success: false, 
     attemptsLeft: team.attemptsLeft,
-    winningTeam: winner ? TEAM_NAMES[winner] || winner : undefined
+    winningTeam: undefined
   };
 };

@@ -101,10 +101,10 @@ export default function Admin() {
                 <tr>
                   <th className="p-4 text-black">Team</th>
                   <th className="p-4 text-black">Won</th>
-                  <th className="p-4 text-black">Attempts Used</th>
                   <th className="p-4 text-black">Attempts Left</th>
-                  <th className="p-4 text-black">Time (s)</th>
                   <th className="p-4 text-black">Actions</th>
+                  <th className="p-4 text-black">Attempts Used</th>
+                  <th className="p-4 text-black">Time (s)</th>
                 </tr>
               </thead>
               <tbody>
@@ -118,9 +118,7 @@ export default function Admin() {
                         <span className="font-bold text-gray-700">No</span>
                       )}
                     </td>
-                    <td className="p-4">{t.submissions}</td>
                     <td className="p-4">{t.attemptsLeft}</td>
-                    <td className="p-4">{t.last_time_taken ?? t.time_taken ?? "-"}</td>
                     <td className="p-4">
                       <button
                         onClick={() => incrementAttempts(t.id)}
@@ -129,6 +127,8 @@ export default function Admin() {
                         +1 Attempt
                       </button>
                     </td>
+                    <td className="p-4">{t.submissions}</td>
+                    <td className="p-4">{t.last_time_taken ?? t.time_taken ?? "-"}</td>
                   </tr>
                 ))}
               </tbody>
